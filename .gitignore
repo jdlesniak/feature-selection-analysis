@@ -5,9 +5,9 @@ __pycache__/
 
 ## my additions
 *.parquet
-*.pkl
 *.csv
-data/
+data/raw/
+data/clean/
 
 # C extensions
 *.so
