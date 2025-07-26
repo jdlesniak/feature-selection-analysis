@@ -4,3 +4,4 @@ xgboost
 matplotlib
 numpy
 seaborn
+jupyter
