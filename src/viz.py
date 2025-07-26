@@ -19,7 +19,7 @@ def plot_lasso_paths(result_dict):
         pd.DataFrame: DataFrame with ['feature', 'coef'], sorted by abs(coef)
     """
     # Prep base plot
-    fig, ax = plt.subplots(figsize=(10, 5))
+    fig, ax = plt.subplots(figsize=(8, 5))
     log_Cs = -np.log10(result_dict['Cs'])
     best_C_index = np.argmin(np.abs(result_dict['Cs'] - result_dict['best_C']))
 
@@ -77,7 +77,7 @@ def plot_rf_feature_importance(model, feature_names, top_n=20):
     sorted_importances = importances[indices]
 
     # Plot
-    fig, ax = plt.subplots(figsize=(8, 5))
+    fig, ax = plt.subplots(figsize=(7, 5))
     ax.barh(range(top_n), sorted_importances[::-1], align='center')
     ax.set_yticks(range(top_n))
     ax.set_yticklabels(sorted_features[::-1])
@@ -111,7 +111,7 @@ def plot_xgb_feature_importance(model, feature_names, top_n=20):
     sorted_importances = importances[indices]
 
     # Plot
-    fig, ax = plt.subplots(figsize=(8, 5))
+    fig, ax = plt.subplots(figsize=(7, 5))
     ax.barh(range(top_n), sorted_importances[::-1], align='center')
     ax.set_yticks(range(top_n))
     ax.set_yticklabels(sorted_features[::-1])
@@ -141,10 +141,6 @@ def plot_feature_ranking_comparison(lasso_df, rf_df, xgb_df, top_n=20, selected_
     Returns:
         pd.DataFrame: Combined rankings dataframe (for further use or export).
     """
-
-    import matplotlib.pyplot as plt
-    import matplotlib.ticker as ticker
-
     # Selected features to highlight (if selected_lines=True)
     selected = {
         'ghazard_c', 'nbumps5', 'ghazard_b', 'nbumps7', 'nbumps89',
