@@ -5,6 +5,7 @@ from sklearn.model_selection import RandomizedSearchCV
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import make_pipeline
 import numpy as np
+import pandas as pd
 
 ### get our util functions and paths
 from utils import *
@@ -12,53 +13,53 @@ from paths import CLEAN_DATA_DIR, SEED
 
 def fit_lasso_cv(X, y, seed, cv_folds=5, C_grid=None):
     """
-    Fit a cross-validated Lasso (L1-penalized) logistic regression and capture solution paths.
+    Fit a cross-validated L1-penalized logistic regression model and capture solution paths.
 
     Args:
         X (pd.DataFrame or np.ndarray): Feature matrix.
         y (pd.Series or np.ndarray): Binary target vector (0/1).
-        seed (int): Random seed for reproducibility.
-        cv_folds (int): Number of cross-validation folds.
-        C_grid (list or np.ndarray): Optional grid of inverse regularization strengths (C = 1/lambda).
+        seed (int): Random seed.
+        cv_folds (int): Number of CV folds.
+        C_grid (array-like): Optional grid of inverse regularization strengths (C = 1/lambda).
 
     Returns:
         dict: {
             'model': fitted LogisticRegressionCV object,
             'Cs': array of C values tested,
-            'coefs': array of shape (n_Cs, n_features),
+            'coefs': array of shape (n_features, n_Cs),
             'best_C': best C value selected,
             'coef_best': coefficients at best C,
             'feature_names': list of feature names
         }
     """
     if C_grid is None:
-        C_grid = np.logspace(-4, 4, 100)  # can customize this
+        C_grid = np.logspace(-4, 4, 100)
 
     model = LogisticRegressionCV(
         Cs=C_grid,
         cv=cv_folds,
         penalty='l1',
-        solver='saga',  
+        solver='saga',
         scoring='accuracy',
         random_state=seed,
         max_iter=50000,
         refit=True
     )
 
-    ## standardize the features in a pipeline
-    ## lasso needs standardized features otherwise the scale of
-    ## coefficients screws with the estimates
     pipe = make_pipeline(StandardScaler(), model)
     pipe.fit(X, y)
 
-    # Extract model from pipeline
     lasso = pipe.named_steps['logisticregressioncv']
 
-    # Get coefficients along path
-    coefs = lasso.coefs_paths_[1]  # class 1 → binary classification
+    # coefs_paths_ shape: (1, n_Cs, n_features)
+    # Transpose to shape: (n_features, n_Cs)
+    coefs = lasso.coefs_paths_[1][0].T
+
     Cs = lasso.Cs_
     best_C = lasso.C_[0]
     coef_best = lasso.coef_.flatten()
+
+    feature_names = X.columns.tolist() if hasattr(X, "columns") else [f"x{i}" for i in range(X.shape[1])]
 
     return {
         'model': lasso,
@@ -66,14 +67,8 @@ def fit_lasso_cv(X, y, seed, cv_folds=5, C_grid=None):
         'coefs': coefs,
         'best_C': best_C,
         'coef_best': coef_best,
-        'feature_names': X.columns.tolist() if hasattr(X, 'columns') else [f'x{i}' for i in range(X.shape[1])]
+        'feature_names': feature_names
     }
-
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import RandomizedSearchCV
-from sklearn.pipeline import make_pipeline
-from sklearn.preprocessing import StandardScaler
-import numpy as np
 
 def fit_rf_cv(X, y, seed, cv_folds=5, n_iter=25):
     """

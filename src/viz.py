@@ -1,38 +1,60 @@
 import matplotlib.pyplot as plt
+from matplotlib import colormaps
 import numpy as np
+import pandas as pd
 
 def plot_lasso_paths(result_dict):
     """
-    Plot the Lasso coefficient solution paths from a fitted LogisticRegressionCV model.
+    Plot coefficient paths for L1-penalized logistic regression, with optimal C marker.
+    - Non-zero features use solid lines; zeroed features use dashed lines.
+    - All features appear in the legend with correct color/style.
+    - Returns a DataFrame of coefficients at best_C, sorted by abs(coef).
 
     Args:
-        result_dict (dict): Dictionary returned from fit_lasso_cv(), containing:
-            - 'coefs': array of shape (1, n_features, n_Cs) with coefficient paths
-            - 'Cs': array of C values used
-            - 'feature_names': list of feature names
+        result_dict (dict): Output from fit_lasso_cv
 
     Returns:
-        matplotlib.figure.Figure: The matplotlib Figure object for further use or saving.
+        pd.DataFrame: DataFrame with ['feature', 'coef'], sorted by abs(coef)
     """
-    coefs = result_dict['coefs']
-    Cs = result_dict['Cs']
-    feature_names = result_dict['feature_names']
-
-    # Reshape coefs to (n_features, n_Cs)
-    coefs = coefs[0]  # for class 1
-
+    # Prep base plot
     fig, ax = plt.subplots(figsize=(10, 6))
-    for i, feature_name in enumerate(result_dict['feature_names']):
-        ax.plot(log_Cs, coefs[i], label=feature_name)
+    log_Cs = -np.log10(result_dict['Cs'])
+    best_C_index = np.argmin(np.abs(result_dict['Cs'] - result_dict['best_C']))
 
-    ax.set_xlabel("log10(C)")
+    # Build dataframe of feature-level info
+    coef_df = pd.DataFrame({
+        'feature': result_dict['feature_names'],
+        'coef': result_dict['coef_best']
+    })
+    coef_df['abs_coef'] = coef_df['coef'].abs()
+    coef_df = coef_df.sort_values(by='abs_coef', ascending=False).reset_index(drop=True)
+
+    # Assign color and line style
+    cmap = colormaps.get_cmap('tab20')
+    coef_df['color'] = [cmap(i % 20) for i in range(len(coef_df))]
+    coef_df['linestyle'] = coef_df['coef'].apply(lambda c: '-' if c != 0 else '--')
+
+    # Plot all paths with proper style
+    for i, row in coef_df.iterrows():
+        coef_path = result_dict['coefs'][result_dict['feature_names'].index(row['feature'])]
+        ax.plot(log_Cs, coef_path,
+                label=row['feature'],
+                color=row['color'],
+                linestyle=row['linestyle'],
+                linewidth=2 if row['coef'] != 0 else 1)
+
+    # Optimal C marker
+    ax.axvline(x=-np.log10(result_dict['best_C']), color='gray', linestyle='--', label='Optimal C')
+
+    # Finalize plot
+    ax.set_xlabel("-log10(C)")
     ax.set_ylabel("Coefficient Value")
-    ax.set_title("Lasso Solution Paths")
-    ax.axhline(0, color='gray', linestyle='--', linewidth=0.5)
-    ax.grid(True)
-    fig.tight_layout()
+    ax.set_title("Lasso Path")
+    ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left', fontsize='small')
+    plt.tight_layout()
+    plt.show()
 
-    return fig
+    return coef_df.drop(['abs_coef','color', 'linestyle'], axis = 1)
 
 def plot_rf_feature_importance(model, feature_names, top_n=20):
     """
