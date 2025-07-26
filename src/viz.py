@@ -17,7 +17,7 @@ def plot_lasso_paths(result_dict):
         pd.DataFrame: DataFrame with ['feature', 'coef'], sorted by abs(coef)
     """
     # Prep base plot
-    fig, ax = plt.subplots(figsize=(10, 6))
+    fig, ax = plt.subplots(figsize=(10, 5))
     log_Cs = -np.log10(result_dict['Cs'])
     best_C_index = np.argmin(np.abs(result_dict['Cs'] - result_dict['best_C']))
 
@@ -58,7 +58,7 @@ def plot_lasso_paths(result_dict):
 
 def plot_rf_feature_importance(model, feature_names, top_n=20):
     """
-    Plot the top N feature importances from a fitted RandomForestClassifier.
+    Plot and return top N feature importances from a fitted RandomForestClassifier.
 
     Args:
         model (RandomForestClassifier): A trained Random Forest model.
@@ -66,27 +66,33 @@ def plot_rf_feature_importance(model, feature_names, top_n=20):
         top_n (int): Number of top features to display.
 
     Returns:
-        matplotlib.figure.Figure: The matplotlib Figure object for the plot.
+        pd.DataFrame: DataFrame with columns ['feature', 'importance'], sorted by importance.
     """
     importances = model.feature_importances_
     indices = np.argsort(importances)[::-1][:top_n]
-    
+
     sorted_features = [feature_names[i] for i in indices]
     sorted_importances = importances[indices]
 
-    fig, ax = plt.subplots(figsize=(10, 6))
+    # Plot
+    fig, ax = plt.subplots(figsize=(8, 5))
     ax.barh(range(top_n), sorted_importances[::-1], align='center')
     ax.set_yticks(range(top_n))
     ax.set_yticklabels(sorted_features[::-1])
     ax.set_xlabel("Feature Importance")
     ax.set_title(f"Top {top_n} Random Forest Feature Importances")
     fig.tight_layout()
+    plt.show()
 
-    return fig
+    # Return importance dataframe
+    return pd.DataFrame({
+        'feature': sorted_features,
+        'importance': sorted_importances
+    })
 
 def plot_xgb_feature_importance(model, feature_names, top_n=20):
     """
-    Plot the top N feature importances from a fitted XGBClassifier.
+    Plot and return top N feature importances from a fitted XGBClassifier.
 
     Args:
         model (XGBClassifier): A trained XGBoost model.
@@ -94,20 +100,26 @@ def plot_xgb_feature_importance(model, feature_names, top_n=20):
         top_n (int): Number of top features to display.
 
     Returns:
-        matplotlib.figure.Figure: The matplotlib Figure object for the plot.
+        pd.DataFrame: DataFrame with columns ['feature', 'importance'], sorted by importance.
     """
     importances = model.feature_importances_
     indices = np.argsort(importances)[::-1][:top_n]
-    
+
     sorted_features = [feature_names[i] for i in indices]
     sorted_importances = importances[indices]
 
-    fig, ax = plt.subplots(figsize=(10, 6))
+    # Plot
+    fig, ax = plt.subplots(figsize=(8, 5))
     ax.barh(range(top_n), sorted_importances[::-1], align='center')
     ax.set_yticks(range(top_n))
     ax.set_yticklabels(sorted_features[::-1])
     ax.set_xlabel("Feature Importance")
     ax.set_title(f"Top {top_n} XGBoost Feature Importances")
     fig.tight_layout()
+    plt.show()
 
-    return fig
+    # Return importance dataframe
+    return pd.DataFrame({
+        'feature': sorted_features,
+        'importance': sorted_importances
+    })
